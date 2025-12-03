@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Świąteczna Zdrapka - Dziadek do Orzechów</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #2c2c2c; /* Ciemne tło strony dla kontrastu */
+            font-family: 'Times New Roman', serif;
+            touch-action: none; /* Blokada przewijania na telefonach */
+            user-select: none; /* Zapobiega zaznaczaniu tekstu podczas drapania */
+        }
+
+        .container {
+            position: relative;
+            /* Ustawiamy sztywne proporcje */
+            width: 350px; 
+            height: 500px;
+            
+            /* Skalowanie na mniejszych ekranach */
+            max-width: 90vw;
+            max-height: 80vh;
+            
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            overflow: hidden;
+            
+            /* KLUCZOWA ZMIANA: ŚCIEŻKA WZGLĘDNA */
+            background-image: url('zaproszenie.png'); 
+            
+            /* Używamy 'contain', by widoczne było całe zaproszenie */
+            background-size: contain; 
+            background-position: center;
+            background-repeat: no-repeat; 
+            background-color: #f4e4d0; 
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair; 
+        }
+
+        .text-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            text-align: center;
+            color: #d4af37;
+            pointer-events: none;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="card-container">
+        <canvas id="scratch-canvas"></canvas>
+        <div class="text-overlay" id="instruction-text">ZDRAP, ABY ODKRYĆ NIESPODZIANKĘ</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('card-container');
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            const instructionText = document.getElementById('instruction-text');
+            let isDrawing = false;
+            let firstScratch = true;
+
+            function resizeCanvas() {
+                const rect = container.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                initScratchLayer(); 
+            }
+
+            function initScratchLayer() {
+                // Rysowanie złotej warstwy
+                ctx.fillStyle = '#C5A059'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Dodanie brokatu / szumu
+                for (let i = 0; i < 300; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? '#E6C67C' : '#8B6C30';
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.random() * canvas.width, 
+                        Math.random() * canvas.height, 
+                        Math.random() * 2 + 0.5, 
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
+
+            function scratch(x, y) {
+                if (firstScratch) {
+                    instructionText.style.display = 'none';
+                    firstScratch = false;
+                }
+                
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2, false); 
+                ctx.fill();
+            }
+
+            function getCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                let clientX, clientY;
+
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;

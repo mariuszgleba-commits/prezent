@@ -2,134 +2,155 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Świąteczna Zdrapka - Dziadek do Orzechów</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twoje Zaproszenie - Zdrapka</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #2c2c2c; /* Ciemne tło strony dla kontrastu */
-            font-family: 'Times New Roman', serif;
-            touch-action: none; /* Blokada przewijania na telefonach */
-            user-select: none; /* Zapobiega zaznaczaniu tekstu podczas drapania */
-        }
-
-        .container {
+        /* Styl dla kontenera, aby utrzymać pozycjonowanie */
+        #scratch-container {
             position: relative;
-            /* Ustawiamy sztywne proporcje */
-            width: 350px; 
-            height: 500px;
-            
-            /* Skalowanie na mniejszych ekranach */
-            max-width: 90vw;
-            max-height: 80vh;
-            
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 2px solid #d4af37;
+            width: 300px; /* Ustaw szerokość taką samą jak w JS */
+            height: 200px; /* Ustaw wysokość taką samą jak w JS */
+            margin: 50px auto; /* Wyśrodkowanie na stronie */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
-            overflow: hidden;
-            
-            /* KLUCZOWA ZMIANA: ŚCIEŻKA WZGLĘDNA */
-            background-image: url('zaproszenie.png'); 
-            
-            /* Używamy 'contain', by widoczne było całe zaproszenie */
-            background-size: contain; 
-            background-position: center;
-            background-repeat: no-repeat; 
-            background-color: #f4e4d0; 
+            overflow: hidden; /* Ważne, aby krawędzie były równe */
         }
 
-        canvas {
+        /* Styl dla obrazu, który ma być "zdrapany" */
+        #scratchImage {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        /* Styl dla płótna (warstwy do zdrapywania) */
+        #scratchCanvas {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: crosshair; 
-        }
-
-        .text-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            text-align: center;
-            color: #d4af37;
-            pointer-events: none;
-            font-size: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 5px rgba(0,0,0,0.8);
-            z-index: 10;
+            cursor: pointer;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container" id="card-container">
-        <canvas id="scratch-canvas"></canvas>
-        <div class="text-overlay" id="instruction-text">ZDRAP, ABY ODKRYĆ NIESPODZIANKĘ</div>
+    <h1 style="text-align: center; color: #333;">Odkryj niespodziankę!</h1>
+
+    <div id="scratch-container">
+        <img id="scratchImage" src="zaproszenie.png" alt="Zaproszenie" width="300" height="200" />
+        
+        <canvas id="scratchCanvas"></canvas>
     </div>
+    
+    <p style="text-align: center; margin-top: 20px; color: #555;">Zacznij klikać i przeciągać, aby zdrapać warstwę.</p>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('card-container');
-            const canvas = document.getElementById('scratch-canvas');
+            const container = document.getElementById('scratch-container');
+            const canvas = document.getElementById('scratchCanvas');
             const ctx = canvas.getContext('2d');
-            const instructionText = document.getElementById('instruction-text');
-            let isDrawing = false;
-            let firstScratch = true;
+            const imageToReveal = document.getElementById('scratchImage');
 
-            function resizeCanvas() {
-                const rect = container.getBoundingClientRect();
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-                initScratchLayer(); 
-            }
+            // Ustawienia rozmiaru: Ważne, aby były takie same jak w CSS i atrybutach <img>
+            const WIDTH = 300;
+            const HEIGHT = 200;
 
-            function initScratchLayer() {
-                // Rysowanie złotej warstwy
-                ctx.fillStyle = '#C5A059'; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            canvas.width = WIDTH;
+            canvas.height = HEIGHT;
+            
+            // Flaga do sprawdzania, czy użytkownik "zdrapuje"
+            let isScratching = false;
 
-                // Dodanie brokatu / szumu
-                for (let i = 0; i < 300; i++) {
-                    ctx.fillStyle = Math.random() > 0.5 ? '#E6C67C' : '#8B6C30';
-                    ctx.beginPath();
-                    ctx.arc(
-                        Math.random() * canvas.width, 
-                        Math.random() * canvas.height, 
-                        Math.random() * 2 + 0.5, 
-                        0, Math.PI * 2
-                    );
-                    ctx.fill();
-                }
-            }
-
-            function scratch(x, y) {
-                if (firstScratch) {
-                    instructionText.style.display = 'none';
-                    firstScratch = false;
-                }
+            // 1. FUNKCJA INICJALIZUJĄCA "ZDRAPKĘ"
+            function initializeScratchLayer() {
+                // Rysujemy warstwę w kolorze szarym, która ma być zdrapywana
+                ctx.fillStyle = '#ccc'; // Jasnoszary kolor
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
                 
+                // Opcjonalnie: Dodaj tekst lub wzorek na warstwie
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#555';
+                ctx.textAlign = 'center';
+                ctx.fillText('ZDRAP!', WIDTH / 2, HEIGHT / 2);
+
+                // Konfiguracja "gumki"
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.beginPath();
-                ctx.arc(x, y, 25, 0, Math.PI * 2, false); 
-                ctx.fill();
+                ctx.lineWidth = 25; // Szerokość pędzla
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
             }
 
+            // 2. FUNKCJE OBSŁUGI ZDARZEŃ (MYSZKA I DOTYK)
+
+            // Pobiera współrzędne w kontekście canvas
             function getCoords(e) {
                 const rect = canvas.getBoundingClientRect();
                 let clientX, clientY;
 
-                if (e.touches && e.touches.length > 0) {
+                // Sprawdzanie, czy to zdarzenie dotyku
+                if (e.touches) {
                     clientX = e.touches[0].clientX;
                     clientY = e.touches[0].clientY;
                 } else {
                     clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            // Rozpoczyna zdrapywanie
+            function startScratch(e) {
+                e.preventDefault(); // Zapobiega przesuwaniu strony na urządzeniach mobilnych
+                isScratching = true;
+                const { x, y } = getCoords(e);
+                
+                // Rozpocznij ścieżkę i natychmiast ją narysuj (aby działało dla pojedynczego kliknięcia)
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 1, y + 1); // Rysowanie krótkiej linii
+                ctx.stroke();
+            }
+
+            // Kontynuuje zdrapywanie
+            function scratch(e) {
+                if (!isScratching) return;
+                e.preventDefault();
+                const { x, y } = getCoords(e);
+                
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+
+            // Kończy zdrapywanie
+            function stopScratch() {
+                isScratching = false;
+                // Zakończenie ścieżki
+                ctx.closePath();
+            }
+            
+            // 3. PODPINANIE OBSŁUGI ZDARZEŃ
+            
+            // Myszka
+            canvas.addEventListener('mousedown', startScratch);
+            canvas.addEventListener('mousemove', scratch);
+            document.addEventListener('mouseup', stopScratch);
+
+            // Dotyk (dla urządzeń mobilnych)
+            canvas.addEventListener('touchstart', startScratch);
+            canvas.addEventListener('touchmove', scratch);
+            document.addEventListener('touchend', stopScratch);
+            
+            // 4. INICJALIZACJA
+            initializeScratchLayer();
+
+            console.log("Kod zdrapki załadowany. Sprawdź, czy plik zaproszenie.png jest w tym samym folderze.");
+        });
+    </script>
+</body>
+</html>

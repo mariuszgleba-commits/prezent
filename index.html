@@ -6,19 +6,20 @@
     <title>Twoje Zaproszenie - Zdrapka</title>
     <style>
         /* Styl dla kontenera, aby utrzymać pozycjonowanie */
-        #scratch-container {
-            position: relative;
-            /* Domyślne wymiary (JS je nadpisze po załadowaniu obrazu) */
-            width: 300px; 
-            height: 200px; 
-            margin: 50px auto;
-            
-            /* EFEKT ZŁOTEGO CIENIA */
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); 
-            
-            border-radius: 10px;
-            overflow: hidden;
-        }
+       #scratch-container {
+    position: relative;
+    /* Domyślne wymiary (usunięte, bo kolidują z max-width) */
+    
+    /* KLUCZOWA ZMIANA: OGRANICZENIE SZEROKOŚCI */
+    max-width: 600px; /* Maksymalna szerokość kontenera na stronie */
+    width: 90%;      /* Użyj 90% dostępnej szerokości na mniejszych ekranach */
+    height: auto;    /* Wysokość jest automatyczna */
+    
+    margin: 50px auto;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); 
+    border-radius: 10px;
+    overflow: hidden;
+}
 
         /* Obrazek, który ma się odsłonić */
         #scratchImage {
@@ -67,16 +68,23 @@
             const image = new Image();
             image.src = imageToReveal.src; 
 
-            image.onload = () => {
-                // Ustawiamy wymiary canvas i kontenera na podstawie wymiarów załadowanego obrazu
-                WIDTH = image.width;
-                HEIGHT = image.height;
+image.onload = () => {
+                // ... (reszta kodu)
+
+                // WAŻNE: Wymiary WIDTH i HEIGHT, których użyjemy do canvas, 
+                // powinny być pobrane z kontenera, który jest już wyskalowany przez CSS!
+
+                // Pobieramy rzeczywiste, wyskalowane wymiary kontenera
+                const rect = container.getBoundingClientRect();
+                WIDTH = rect.width;
+                HEIGHT = rect.height;
 
                 canvas.width = WIDTH;
                 canvas.height = HEIGHT;
                 
-                container.style.width = `${WIDTH}px`;
-                container.style.height = `${HEIGHT}px`;
+                // NIE NADPISUJEMY JUŻ STYLÓW kontenera, bo zrobil to CSS:
+                // container.style.width = `${WIDTH}px`;
+                // container.style.height = `${HEIGHT}px`;
 
                 // Po ustaleniu wymiarów inicjujemy warstwę zdrapki
                 initializeScratchLayer(WIDTH, HEIGHT);
@@ -169,3 +177,4 @@
     </script>
 </body>
 </html>
+

@@ -6,23 +6,21 @@
     <title>Twoje Zaproszenie - Zdrapka</title>
     <style>
         /* Styl dla kontenera, aby utrzymać pozycjonowanie */
-       #scratch-container {
-    position: relative;
-    /* Domyślne wymiary zostawiamy, JS je i tak nadpisze, ale są potrzebne */
-    width: 300px; 
-    height: 200px; 
-    margin: 50px auto;
-    
-    /* DODAJEMY EFEKT ZŁOTEGO CIENIA */
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); /* Intensywny złoty cień */
-    
-    border-radius: 10px;
-    overflow: hidden;
-}
+        #scratch-container {
+            position: relative;
+            /* Domyślne wymiary (JS je nadpisze po załadowaniu obrazu) */
+            width: 300px; 
+            height: 200px; 
+            margin: 50px auto;
+            
+            /* EFEKT ZŁOTEGO CIENIA */
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); 
+            
+            border-radius: 10px;
+            overflow: hidden;
+        }
 
-/* Reszta stylów pozostaje bez zmian */
-
-        /* Styl dla obrazu, który ma być "zdrapany" */
+        /* Obrazek, który ma się odsłonić */
         #scratchImage {
             display: block;
             width: 100%;
@@ -30,7 +28,7 @@
             border-radius: 10px;
         }
 
-        /* Styl dla płótna (warstwy do zdrapywania) */
+        /* Płótno (warstwa do zdrapywania) */
         #scratchCanvas {
             position: absolute;
             top: 0;
@@ -52,74 +50,122 @@
     
     <p style="text-align: center; margin-top: 20px; color: #555;">Zacznij klikać i przeciągać, aby zdrapać warstwę.</p>
 
- <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('scratch-container');
-        const canvas = document.getElementById('scratchCanvas');
-        const ctx = canvas.getContext('2d');
-        const imageToReveal = document.getElementById('scratchImage');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('scratch-container');
+            const canvas = document.getElementById('scratchCanvas');
+            const ctx = canvas.getContext('2d');
+            const imageToReveal = document.getElementById('scratchImage');
 
-        // Flaga do sprawdzania, czy użytkownik "zdrapuje"
-        let isScratching = false;
+            let isScratching = false;
+            let WIDTH, HEIGHT; // Zmienne na wymiary
 
-        // ----------------------------------------------------
-        // NOWA LOGIKA ŁADOWANIA I SKALOWANIA OBRAZU
-        // ----------------------------------------------------
+            // ----------------------------------------------------
+            // GŁÓWNA LOGIKA ŁADOWANIA I SKALOWANIA
+            // ----------------------------------------------------
 
-        const image = new Image();
-        image.src = imageToReveal.src; // Wczytaj obraz z tagu <img>
+            const image = new Image();
+            image.src = imageToReveal.src; 
 
-        image.onload = () => {
-            // Ustawiamy wymiary canvas i kontenera na podstawie wymiarów załadowanego obrazu
-            const WIDTH = image.width;
-            const HEIGHT = image.height;
+            image.onload = () => {
+                // Ustawiamy wymiary canvas i kontenera na podstawie wymiarów załadowanego obrazu
+                WIDTH = image.width;
+                HEIGHT = image.height;
 
-            canvas.width = WIDTH;
-            canvas.height = HEIGHT;
+                canvas.width = WIDTH;
+                canvas.height = HEIGHT;
+                
+                container.style.width = `${WIDTH}px`;
+                container.style.height = `${HEIGHT}px`;
+
+                // Po ustaleniu wymiarów inicjujemy warstwę zdrapki
+                initializeScratchLayer(WIDTH, HEIGHT);
+            };
             
-            container.style.width = `${WIDTH}px`;
-            container.style.height = `${HEIGHT}px`;
+            // ----------------------------------------------------
+            // FUNKCJE POMOCNICZE
+            // ----------------------------------------------------
 
-            // Rysujemy obraz (tylko w tagu <img>, nie w canvas)
-            // Teraz możemy zainicjalizować warstwę zdrapki
+            function initializeScratchLayer(W, H) {
+                // Używamy koloru złotego!
+                ctx.fillStyle = '#FFD700'; 
+                ctx.fillRect(0, 0, W, H);
+                
+                // Dodaj tekst "ZDRAP!"
+                ctx.font = '24px Arial'; 
+                ctx.fillStyle = '#A88400'; 
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('ZDRAP!', W / 2, H / 2);
 
-            initializeScratchLayer(WIDTH, HEIGHT);
+                // Konfiguracja "gumki"
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 30; 
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+            }
             
-            // ... (Pozostałe funkcje takie jak startScratch, scratch, stopScratch pozostają bez zmian)
-        };
-        
-        // ----------------------------------------------------
-        // FUNKCJA INICJALIZUJĄCA "ZDRAPKĘ" Z NOWYMI PARAMETRAMI
-        // ----------------------------------------------------
+            // Pobiera współrzędne w kontekście canvas
+            function getCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                let clientX, clientY;
 
-        function initializeScratchLayer(WIDTH, HEIGHT) {
-            // Używamy koloru złotego!
-            ctx.fillStyle = '#FFD700'; 
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            // Rozpoczyna zdrapywanie
+            function startScratch(e) {
+                e.preventDefault(); 
+                isScratching = true;
+                const { x, y } = getCoords(e);
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 1, y + 1); 
+                ctx.stroke();
+            }
+
+            // Kontynuuje zdrapywanie
+            function scratch(e) {
+                if (!isScratching) return;
+                e.preventDefault();
+                const { x, y } = getCoords(e);
+                
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+
+            // Kończy zdrapywanie
+            function stopScratch() {
+                isScratching = false;
+                ctx.closePath();
+            }
             
-            // Opcjonalnie: Dodaj tekst lub wzorek na warstwie
-            ctx.font = '24px Arial'; // Zwiększamy czcionkę
-            ctx.fillStyle = '#A88400'; // Ciemniejszy odcień złota dla tekstu
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle'; // Ustawienie bazowej linii tekstu na środek
-            ctx.fillText('ZDRAP!', WIDTH / 2, HEIGHT / 2);
+            // ----------------------------------------------------
+            // PODPINANIE OBSŁUGI ZDARZEŃ
+            // ----------------------------------------------------
+            
+            // Myszka
+            canvas.addEventListener('mousedown', startScratch);
+            canvas.addEventListener('mousemove', scratch);
+            document.addEventListener('mouseup', stopScratch);
 
-            // Konfiguracja "gumki"
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.lineWidth = 30; // Nieco szerszy pędzel
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-        }
-        
-        // Funkcje obsługi zdarzeń (startScratch, scratch, stopScratch i getCoords) 
-        // można zostawić bez zmian z poprzedniej wersji kodu, ponieważ 
-        // działają poprawnie, niezależnie od wymiarów.
-
-        // PAMIĘTAJ, aby przenieść wszystkie funkcje: getCoords, startScratch, scratch, stopScratch 
-        // ORAZ podpięcie event listenerów (canvas.addEventListener...) do sekcji `<script>`.
-        
-    });
-</script>
+            // Dotyk (dla urządzeń mobilnych)
+            canvas.addEventListener('touchstart', startScratch);
+            canvas.addEventListener('touchmove', scratch);
+            document.addEventListener('touchend', stopScratch);
+        });
+    </script>
 </body>
 </html>
-
